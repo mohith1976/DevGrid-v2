@@ -82,15 +82,18 @@ header h1 {
 
 .info-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 10px 0;
+  gap: 12px;
 }
 
 .label {
   color: #737373;
   font-size: 12px;
   font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
 }
 
 .value {
@@ -98,6 +101,12 @@ header h1 {
   font-size: 13px;
   font-weight: 500;
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  text-align: right;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  max-width: 260px;
+  line-height: 1.4;
 }
 
 /* Stats Section */

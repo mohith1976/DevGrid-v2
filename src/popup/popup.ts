@@ -81,7 +81,12 @@ async function loadConnectedState(config: GitHubConfig) {
   try {
     const repoInfo = await getRepositoryInfo();
     if (repoInfo && repoInfo.description) {
-      repoDescriptionEl.textContent = repoInfo.description;
+      // Truncate description if too long (max 100 characters)
+      let description = repoInfo.description;
+      if (description.length > 100) {
+        description = description.substring(0, 97) + '...';
+      }
+      repoDescriptionEl.textContent = description;
       repoDescriptionRow.style.display = 'flex';
     } else {
       repoDescriptionEl.textContent = 'No repository description provided.';
