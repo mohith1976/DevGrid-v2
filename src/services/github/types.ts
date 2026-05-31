@@ -40,6 +40,9 @@ export interface RepositoryInfo {
 
   /** Whether repository is private */
   private: boolean;
+
+  /** Repository description */
+  description: string | null;
 }
 
 /**

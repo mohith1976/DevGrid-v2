@@ -4,11 +4,17 @@
  */
 
 import { GitHubConfig } from '../../domain/github-config';
+import { RepositoryInfo } from '../github/types';
 
 /**
  * Storage key for GitHub configuration
  */
 const GITHUB_CONFIG_KEY = 'github_config';
+
+/**
+ * Storage key for repository information
+ */
+const GITHUB_REPO_INFO_KEY = 'github_repo_info';
 
 /**
  * Save GitHub configuration to chrome.storage.local
@@ -78,4 +84,41 @@ export async function clearConfig(): Promise<void> {
 export async function hasConfig(): Promise<boolean> {
   const config = await getConfig();
   return config !== null;
+}
+
+/**
+ * Save repository information to chrome.storage.local
+ *
+ * @param repoInfo - Repository information to save
+ * @returns Promise that resolves when info is saved
+ */
+export async function saveRepositoryInfo(repoInfo: RepositoryInfo): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [GITHUB_REPO_INFO_KEY]: repoInfo }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(`Failed to save repository info: ${chrome.runtime.lastError.message}`));
+      } else {
+        console.log('[Storage] Repository info saved:', `${repoInfo.owner}/${repoInfo.name}`);
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Get repository information from chrome.storage.local
+ *
+ * @returns Promise resolving to repository information or null if not found
+ */
+export async function getRepositoryInfo(): Promise<RepositoryInfo | null> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get([GITHUB_REPO_INFO_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(`Failed to get repository info: ${chrome.runtime.lastError.message}`));
+      } else {
+        const repoInfo = result[GITHUB_REPO_INFO_KEY] as RepositoryInfo | undefined;
+        resolve(repoInfo || null);
+      }
+    });
+  });
 }

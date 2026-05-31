@@ -33,9 +33,10 @@ export async function validateAndSaveConfig(config: GitHubConfig): Promise<void>
     const repo = await client.getRepository();
     console.log('[GitHub Config] ✓ Repository accessible:', `${repo.owner}/${repo.name}`);
 
-    // Step 3: Save configuration
+    // Step 3: Save configuration and repository info
     console.log('[GitHub Config] Saving configuration...');
     await githubStorage.saveConfig(config);
+    await githubStorage.saveRepositoryInfo(repo);
     console.log('[GitHub Config] ✓ Configuration saved');
   } catch (error) {
     if (error instanceof Error) {

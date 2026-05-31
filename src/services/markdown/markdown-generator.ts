@@ -114,7 +114,10 @@ export function generateMarkdown(submission: Submission): string {
       submission.memoryPercentile,
       submissionDate,
       submission.code,
-      languageFence
+      languageFence,
+      submission.description,
+      submission.examples,
+      submission.constraints
     );
 
     return markdown;

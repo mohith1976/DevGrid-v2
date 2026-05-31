@@ -8,6 +8,8 @@ import { fetchSubmissionDetails } from '../services/leetcode/submission-service'
 import { isAccepted } from '../domain/submission';
 import { syncSubmissionToGitHub } from '../services/github/github-sync-service';
 import { recoverCacheIfNeeded } from '../services/storage/cache-recovery';
+import { getAllSyncedSubmissions } from '../services/storage/submission-tracking';
+import { extractProblemDetails } from '../services/leetcode/problem-extractor';
 
 console.log('DevGrid content script loaded on:', window.location.href);
 
@@ -185,6 +187,121 @@ class SyncOverlay {
 
 const syncOverlay = new SyncOverlay();
 
+/**
+ * Synced Problem Indicator
+ * Shows a persistent indicator on problem pages if already synced
+ */
+class SyncedProblemIndicator {
+  private indicator: HTMLDivElement | null = null;
+  private currentProblemSlug: string | null = null;
+
+  async show(problemSlug: string, githubUrl: string) {
+    // Don't recreate if already showing for same problem
+    if (this.currentProblemSlug === problemSlug && this.indicator) {
+      return;
+    }
+
+    this.remove();
+    this.currentProblemSlug = problemSlug;
+    this.create(githubUrl);
+  }
+
+  private create(githubUrl: string) {
+    this.indicator = document.createElement('div');
+    this.indicator.id = 'devgrid-synced-indicator';
+    
+    this.indicator.innerHTML = `
+      <div class="devgrid-synced-content">
+        <svg class="devgrid-synced-icon" viewBox="0 0 16 16" width="14" height="14">
+          <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+        </svg>
+        <span class="devgrid-synced-text">✓ Synced to GitHub</span>
+        <a href="${githubUrl}" target="_blank" class="devgrid-synced-link">View</a>
+      </div>
+    `;
+    
+    // Add styles
+    this.injectStyles();
+    
+    // Find the best place to insert the indicator
+    this.insertIndicator();
+  }
+
+  private insertIndicator() {
+    if (!this.indicator) return;
+
+    // Try to find the problem title area
+    const titleArea = document.querySelector('[data-cy="question-title"]') ||
+                     document.querySelector('.text-title-large') ||
+                     document.querySelector('div[class*="title"]');
+
+    if (titleArea && titleArea.parentElement) {
+      // Insert after the title
+      titleArea.parentElement.insertBefore(this.indicator, titleArea.nextSibling);
+    } else {
+      // Fallback: append to body
+      document.body.appendChild(this.indicator);
+    }
+  }
+
+  private injectStyles() {
+    if (document.getElementById('devgrid-synced-indicator-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'devgrid-synced-indicator-styles';
+    style.textContent = `
+      #devgrid-synced-indicator {
+        margin: 12px 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      .devgrid-synced-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #166534;
+      }
+      
+      .devgrid-synced-icon {
+        flex-shrink: 0;
+        color: #166534;
+      }
+      
+      .devgrid-synced-text {
+        font-weight: 500;
+      }
+      
+      .devgrid-synced-link {
+        color: #166534;
+        text-decoration: underline;
+        font-weight: 500;
+        transition: opacity 0.15s ease;
+      }
+      
+      .devgrid-synced-link:hover {
+        opacity: 0.7;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+
+  remove() {
+    if (this.indicator) {
+      this.indicator.remove();
+      this.indicator = null;
+    }
+    this.currentProblemSlug = null;
+  }
+}
+
+const syncedIndicator = new SyncedProblemIndicator();
+
 // Initialize submission detector
 const detector = new SubmissionDetector();
 
@@ -192,6 +309,45 @@ const detector = new SubmissionDetector();
 recoverCacheIfNeeded().catch((error) => {
   console.error('DevGrid: Cache recovery failed:', error);
 });
+
+/**
+ * Check if current problem page is synced and show indicator
+ */
+async function checkAndShowSyncedIndicator(): Promise<void> {
+  const url = window.location.href;
+  
+  // Extract problem slug from URL
+  // Format: https://leetcode.com/problems/two-sum/ or /problems/two-sum/description/
+  const problemMatch = url.match(/\/problems\/([^\/]+)/);
+  if (!problemMatch) return;
+  
+  const problemSlug = problemMatch[1];
+  
+  try {
+    const syncedSubmissions = await getAllSyncedSubmissions();
+    
+    // Check if this problem has been synced
+    const syncedProblem = syncedSubmissions.find(sub => sub.slug === problemSlug);
+    
+    if (syncedProblem) {
+      // Get GitHub config to build URL
+      const config = await new Promise<any>((resolve) => {
+        chrome.storage.local.get(['github_config'], (result) => {
+          resolve(result.github_config);
+        });
+      });
+      
+      if (config && config.owner && config.repo) {
+        const githubUrl = `https://github.com/${config.owner}/${config.repo}/tree/main/${syncedProblem.folderName}`;
+        syncedIndicator.show(problemSlug, githubUrl);
+      }
+    } else {
+      syncedIndicator.remove();
+    }
+  } catch (error) {
+    console.error('DevGrid: Failed to check synced status:', error);
+  }
+}
 
 /**
  * Check for submission and process if accepted
@@ -239,6 +395,21 @@ async function checkSubmission(): Promise<void> {
             message: 'Syncing to GitHub...'
           });
           
+          // Extract problem details from page (description, examples, constraints, topics)
+          console.log('[DevGrid] Extracting problem details...');
+          const problemDetails = await extractProblemDetails(submission.slug);
+          
+          // Merge problem details into submission
+          submission.description = problemDetails.description;
+          submission.examples = problemDetails.examples;
+          submission.constraints = problemDetails.constraints;
+          
+          // Use extracted topics if GraphQL topics are empty
+          if (submission.topics.length === 0 && problemDetails.topics.length > 0) {
+            console.log('[DevGrid] Using extracted topics from page');
+            submission.topics = problemDetails.topics;
+          }
+          
           await syncSubmissionToGitHub(submission);
           
           // Show success overlay
@@ -246,6 +417,9 @@ async function checkSubmission(): Promise<void> {
             status: 'success',
             message: 'Successfully synced to GitHub'
           });
+          
+          // Refresh synced indicator
+          await checkAndShowSyncedIndicator();
         } catch (syncError) {
           // Show error overlay
           syncOverlay.show({
@@ -279,6 +453,7 @@ function setupNavigationMonitoring(): void {
       console.log('DevGrid: URL changed to:', currentUrl);
       lastUrl = currentUrl;
       checkSubmission();
+      checkAndShowSyncedIndicator(); // Check if problem is synced
     }
   };
 
@@ -307,6 +482,7 @@ if (window.location.hostname === 'leetcode.com') {
 
   // Initial detection on page load
   checkSubmission();
+  checkAndShowSyncedIndicator(); // Check if problem is synced on load
 
   // Setup SPA navigation monitoring
   setupNavigationMonitoring();

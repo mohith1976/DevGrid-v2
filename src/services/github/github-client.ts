@@ -33,6 +33,7 @@ interface GitHubRepositoryResponse {
     login: string;
   };
   private: boolean;
+  description: string | null;
   [key: string]: unknown;
 }
 
@@ -147,6 +148,7 @@ export class GitHubClient {
         name: data.name,
         owner: data.owner.login,
         private: data.private,
+        description: data.description,
       };
     } catch (error) {
       if (error instanceof Error) {

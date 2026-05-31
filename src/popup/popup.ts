@@ -6,6 +6,7 @@
 import { validateAndSaveConfig, getCurrentConfig, disconnect } from '../services/github/github-config-service';
 import { GitHubConfig } from '../domain/github-config';
 import { getAllSyncedSubmissions } from '../services/storage/submission-tracking';
+import { getRepositoryInfo } from '../services/storage/github-storage';
 
 // DOM Elements
 const connectedState = document.getElementById('connected-state')!;
@@ -13,6 +14,8 @@ const disconnectedState = document.getElementById('disconnected-state')!;
 const loadingState = document.getElementById('loading-state')!;
 
 const repoNameEl = document.getElementById('repo-name')!;
+const repoDescriptionRow = document.getElementById('repo-description-row')!;
+const repoDescriptionEl = document.getElementById('repo-description')!;
 const statTotal = document.getElementById('stat-total')!;
 const statEasy = document.getElementById('stat-easy')!;
 const statMedium = document.getElementById('stat-medium')!;
@@ -71,6 +74,21 @@ function hideError() {
 async function loadConnectedState(config: GitHubConfig) {
   // Display repository info
   repoNameEl.textContent = `${config.owner}/${config.repo}`;
+
+  // Load repository information
+  try {
+    const repoInfo = await getRepositoryInfo();
+    if (repoInfo && repoInfo.description) {
+      repoDescriptionEl.textContent = repoInfo.description;
+      repoDescriptionRow.style.display = 'flex';
+    } else {
+      repoDescriptionEl.textContent = 'No repository description provided.';
+      repoDescriptionRow.style.display = 'flex';
+    }
+  } catch (error) {
+    console.error('Failed to load repository info:', error);
+    repoDescriptionRow.style.display = 'none';
+  }
 
   // Load statistics
   try {

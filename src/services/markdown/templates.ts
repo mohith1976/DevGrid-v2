@@ -5,7 +5,7 @@
 
 /**
  * Main markdown template for a submission
- * Minimalist, elegant design
+ * Minimalist, elegant design with full problem details
  *
  * @param title - Problem title
  * @param problemUrl - LeetCode problem URL
@@ -19,6 +19,9 @@
  * @param submissionDate - Submission date string
  * @param code - Solution code
  * @param languageFence - Language identifier for code fence
+ * @param description - Problem description (optional)
+ * @param examples - Problem examples (optional)
+ * @param constraints - Problem constraints (optional)
  * @returns Complete markdown document
  */
 export function submissionTemplate(
@@ -33,12 +36,44 @@ export function submissionTemplate(
   memoryPercentile: number | undefined,
   submissionDate: string,
   code: string,
-  languageFence: string
+  languageFence: string,
+  description?: string,
+  examples?: string[],
+  constraints?: string[]
 ): string {
-  const topicList = topics.length > 0 ? topics.join(' · ') : 'None';
   const runtimePercent = runtimePercentile !== undefined ? ` (${runtimePercentile.toFixed(2)}%)` : '';
   const memoryMB = (memory / (1024 * 1024)).toFixed(1);
   const memoryPercent = memoryPercentile !== undefined ? ` (${memoryPercentile.toFixed(2)}%)` : '';
+  
+  // Only include Topics section if topics exist
+  const topicsSection = topics.length > 0 
+    ? `**Topics:** ${topics.join(' · ')}  \n` 
+    : '';
+  
+  // Build problem section if description exists
+  let problemSection = '';
+  if (description && description.length > 0) {
+    problemSection = `\n## Problem\n\n${description}\n`;
+  }
+  
+  // Build examples section if examples exist
+  let examplesSection = '';
+  if (examples && examples.length > 0) {
+    examplesSection = '\n## Examples\n\n';
+    examples.forEach((example, index) => {
+      examplesSection += `### Example ${index + 1}\n\n\`\`\`\n${example}\n\`\`\`\n\n`;
+    });
+  }
+  
+  // Build constraints section if constraints exist
+  let constraintsSection = '';
+  if (constraints && constraints.length > 0) {
+    constraintsSection = '\n## Constraints\n\n';
+    constraints.forEach(constraint => {
+      constraintsSection += `- ${constraint}\n`;
+    });
+    constraintsSection += '\n';
+  }
   
   return `# ${title}
 
@@ -47,8 +82,7 @@ export function submissionTemplate(
 ## Details
 
 **Difficulty:** ${difficulty}  
-**Topics:** ${topicList}
-
+${topicsSection}${problemSection}${examplesSection}${constraintsSection}
 ## Submission
 
 **Language:** ${language}  

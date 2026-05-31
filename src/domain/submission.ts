@@ -59,6 +59,15 @@ export interface Submission {
 
   /** Topic tags for the problem */
   topics: TopicTag[];
+
+  /** Problem description */
+  description?: string;
+
+  /** Problem examples */
+  examples?: string[];
+
+  /** Problem constraints */
+  constraints?: string[];
 }
 
 /**
