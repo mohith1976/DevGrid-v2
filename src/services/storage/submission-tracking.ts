@@ -77,11 +77,12 @@ export async function getAllSyncedSubmissions(): Promise<SyncedSubmission[]> {
   const cache = await getCache();
   const submissions = Object.values(cache.submissions);
   
-  // Ensure all submissions have topics array (migration for old data)
+  // Ensure all submissions have topics array and valid syncedAt (migration for old data)
   return submissions.map(sub => ({
     ...sub,
     difficulty: sub.difficulty || 'Unknown',
     topics: Array.isArray(sub.topics) ? sub.topics : [],
+    syncedAt: sub.syncedAt && !isNaN(sub.syncedAt) ? sub.syncedAt : Date.now(),
   }));
 }
 

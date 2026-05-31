@@ -42,8 +42,14 @@ export interface Submission {
   /** Runtime in milliseconds */
   runtime: number;
 
+  /** Runtime percentile (0-100) */
+  runtimePercentile?: number;
+
   /** Memory usage in bytes */
   memory: number;
+
+  /** Memory percentile (0-100) */
+  memoryPercentile?: number;
 
   /** Status code (10 = Accepted) */
   statusCode: number;

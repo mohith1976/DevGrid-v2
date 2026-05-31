@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevGrid</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>DevGrid</h1>
+      <p class="subtitle">LeetCode → GitHub</p>
+    </header>
+
+    <!-- Connected State -->
+    <div id="connected-state" class="state" style="display: none;">
+      <div class="status-badge success">
+        <span class="badge-icon">●</span>
+        <span>Connected</span>
+      </div>
+
+      <div class="info-section">
+        <div class="info-row">
+          <span class="label">Repository</span>
+          <span class="value" id="repo-name">-</span>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3>Problems Solved</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-easy">0</div>
+            <div class="stat-label">Easy</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-medium">0</div>
+            <div class="stat-label">Medium</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-hard">0</div>
+            <div class="stat-label">Hard</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sync-status" id="sync-status">
+        <span class="sync-icon">↻</span>
+        <span id="sync-message">No syncs yet</span>
+      </div>
+
+      <div class="button-group">
+        <button id="open-repo-btn" class="btn btn-primary">Open Repository</button>
+        <button id="disconnect-btn" class="btn btn-secondary">Disconnect</button>
+      </div>
+    </div>
+
+    <!-- Disconnected State -->
+    <div id="disconnected-state" class="state" style="display: none;">
+      <div class="status-badge error">
+        <span class="badge-icon">●</span>
+        <span>Not Connected</span>
+      </div>
+
+      <form id="config-form" class="config-form">
+        <div class="form-group">
+          <label for="github-username">GitHub Username</label>
+          <input 
+            type="text" 
+            id="github-username" 
+            placeholder="username" 
+            required
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="repo-name-input">Repository Name</label>
+          <input 
+            type="text" 
+            id="repo-name-input" 
+            placeholder="leetcode-solutions" 
+            required
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="github-token">Personal Access Token</label>
+          <input 
+            type="password" 
+            id="github-token" 
+            placeholder="ghp_..." 
+            required
+            autocomplete="off"
+          >
+          <small class="help-text">
+            <a href="https://github.com/settings/tokens/new" target="_blank">Generate token</a> with repo scope
+          </small>
+        </div>
+
+        <div id="error-message" class="error-message" style="display: none;"></div>
+
+        <button type="submit" id="connect-btn" class="btn btn-primary btn-block">
+          Connect to GitHub
+        </button>
+      </form>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="state" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Verifying configuration...</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

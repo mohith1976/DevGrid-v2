@@ -78,16 +78,6 @@ function getLanguageFence(language: string): string {
 }
 
 /**
- * Format runtime display
- *
- * @param runtime - Runtime in milliseconds
- * @returns Formatted runtime string (e.g., "2 ms")
- */
-function formatRuntime(runtime: number): string {
-  return `${runtime} ms`;
-}
-
-/**
  * Generate problem URL from slug
  *
  * @param slug - Problem slug (e.g., "two-sum")
@@ -107,8 +97,6 @@ export function generateMarkdown(submission: Submission): string {
   try {
     // Format data
     const problemUrl = generateProblemUrl(submission.slug);
-    const runtime = formatRuntime(submission.runtime);
-    const memory = formatMemory(submission.memory);
     const languageFence = getLanguageFence(submission.language);
     const topics = submission.topics.map(t => t.name);
     const submissionDate = new Date().toISOString().split('T')[0];
@@ -120,8 +108,10 @@ export function generateMarkdown(submission: Submission): string {
       submission.difficulty,
       topics,
       submission.language,
-      runtime,
-      memory,
+      submission.runtime,
+      submission.runtimePercentile,
+      submission.memory,
+      submission.memoryPercentile,
       submissionDate,
       submission.code,
       languageFence

@@ -4,7 +4,6 @@
  */
 
 import { getAllSyncedSubmissions, SyncedSubmission } from '../storage/submission-tracking';
-import { formatMemory } from './markdown-generator';
 
 /**
  * Generate repository-level README
@@ -71,30 +70,33 @@ function getRecentSubmissions(
   limit: number
 ): SyncedSubmission[] {
   return submissions
+    .filter(sub => sub.syncedAt && !isNaN(sub.syncedAt)) // Filter out invalid timestamps
     .sort((a, b) => b.syncedAt - a.syncedAt)
     .slice(0, limit);
 }
 
 /**
  * Format repository README
+ * Minimalist, elegant design
  */
 function formatRepositoryReadme(
   stats: ReturnType<typeof calculateStatistics>,
   recentSubmissions: SyncedSubmission[],
-  allSubmissions: SyncedSubmission[]
+  _allSubmissions: SyncedSubmission[]
 ): string {
-  // Difficulty badges
+  // Difficulty counts
   const easyCount = stats.difficultyBreakdown['Easy'] || 0;
   const mediumCount = stats.difficultyBreakdown['Medium'] || 0;
   const hardCount = stats.difficultyBreakdown['Hard'] || 0;
   
-  // Language statistics with percentages
+  // Language statistics with visual bars
   const languageStats = Object.entries(stats.languageBreakdown)
     .sort((a, b) => b[1] - a[1])
     .map(([lang, count]) => {
       const percentage = ((count / stats.totalSolved) * 100).toFixed(1);
-      const dots = '.'.repeat(Math.max(1, 15 - lang.length));
-      return `${lang} ${dots} ${percentage}% (${count})`;
+      const barLength = Math.round((count / stats.totalSolved) * 20);
+      const bar = '█'.repeat(barLength) + '░'.repeat(20 - barLength);
+      return `${lang.padEnd(15)} ${bar} ${percentage}%`;
     })
     .join('\n');
   
@@ -102,107 +104,84 @@ function formatRepositoryReadme(
   const topTopics = Object.entries(stats.topicBreakdown)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([topic, count]) => `- **${topic}** (${count})`)
+    .map(([topic, count], idx) => `${(idx + 1).toString().padStart(2)}. ${topic.padEnd(30)} ${count}`)
     .join('\n');
   
-  // Recent submissions
+  // Recent submissions table
   const recentTable = recentSubmissions
-    .map((sub, idx) => {
-      const runtimeStr = `${sub.runtime}ms`;
-      const memoryStr = formatMemory(sub.memory);
-      const difficultyBadge = getDifficultyBadge(sub.difficulty);
-      return `${idx + 1}. [${sub.title}](./${sub.folderName}) ${difficultyBadge} - ${sub.language} - ${runtimeStr} - ${memoryStr}`;
-    })
-    .join('\n');
-  
-  // All problems table
-  const allProblemsTable = allSubmissions
-    .sort((a, b) => parseInt(a.questionId) - parseInt(b.questionId))
     .map((sub) => {
-      const runtimeStr = `${sub.runtime}ms`;
-      const memoryStr = formatMemory(sub.memory);
-      const difficultyBadge = getDifficultyBadge(sub.difficulty);
-      const topics = Array.isArray(sub.topics) ? sub.topics : [];
-      const topicsStr = topics.slice(0, 3).map(t => t.name).join(', ');
-      return `| ${sub.questionId} | [${sub.title}](./${sub.folderName}) | ${difficultyBadge} | ${sub.language} | ${topicsStr} | ${runtimeStr} | ${memoryStr} |`;
+      const diffEmoji = getDifficultyEmoji(sub.difficulty);
+      // Validate syncedAt timestamp
+      const timestamp = sub.syncedAt && !isNaN(sub.syncedAt) ? sub.syncedAt : Date.now();
+      const date = new Date(timestamp).toISOString().split('T')[0];
+      return `| ${diffEmoji} | [${sub.title}](./${sub.folderName}) | ${sub.language} | ${date} |`;
     })
     .join('\n');
   
   const lastUpdated = new Date().toISOString().split('T')[0];
   
-  return `# 🚀 LeetCode Solutions
+  return `# DevGrid LeetCode Archive
 
-![Total Solved](https://img.shields.io/badge/Total-${stats.totalSolved}-brightgreen)
-![Unique Problems](https://img.shields.io/badge/Problems-${stats.uniqueProblems}-blue)
-![Languages](https://img.shields.io/badge/Languages-${Object.keys(stats.languageBreakdown).length}-orange)
-![Easy](https://img.shields.io/badge/Easy-${easyCount}-success)
-![Medium](https://img.shields.io/badge/Medium-${mediumCount}-yellow)
-![Hard](https://img.shields.io/badge/Hard-${hardCount}-red)
+Automated LeetCode solutions synchronized to GitHub.
 
-## 📊 Statistics
+## Statistics
 
-- **Total Solutions**: ${stats.totalSolved}
-- **Unique Problems**: ${stats.uniqueProblems}
-- **Easy**: ${easyCount}
-- **Medium**: ${mediumCount}
-- **Hard**: ${hardCount}
+\`\`\`
+Total Solved    ${stats.totalSolved}
+Easy            ${easyCount}
+Medium          ${mediumCount}
+Hard            ${hardCount}
+\`\`\`
 
-## 💻 Languages
+## Languages
 
 \`\`\`
 ${languageStats}
 \`\`\`
 
-## 🏷️ Top Topics
+## Top Topics
 
+\`\`\`
 ${topTopics}
+\`\`\`
 
-## 🔥 Recent Submissions
+## Recent Activity
 
+|   | Problem | Language | Date |
+|---|---------|----------|------|
 ${recentTable}
 
-## 📁 All Problems
+## Repository Structure
 
-| # | Title | Difficulty | Language | Topics | Runtime | Memory |
-|---|-------|------------|----------|--------|---------|--------|
-${allProblemsTable}
+Problems are organized by ID and slug:
 
-## 📂 Repository Structure
-
-Each problem is organized in its own folder:
 \`\`\`
-<problem-id>-<problem-slug>/
-├── README.md          # Problem description and solution details
-└── <problem-id>-<problem-slug>.<ext>  # Solution code
+<id>-<slug>/
+  ├── README.md
+  └── <id>-<slug>.<ext>
 \`\`\`
 
-Example:
-\`\`\`
-0001-two-sum/
-├── README.md
-└── 0001-two-sum.java
-\`\`\`
+Example: \`0001-two-sum/README.md\`
 
 ---
 
-*Last updated: ${lastUpdated}*
-*Auto-generated by [DevGrid](https://github.com/yourusername/devgrid)*
+Last updated: ${lastUpdated}
 `;
 }
 
 /**
- * Get difficulty badge emoji
+ * Get difficulty emoji (minimal)
  */
-function getDifficultyBadge(difficulty: string): string {
+function getDifficultyEmoji(difficulty: string): string {
   switch (difficulty) {
     case 'Easy':
-      return '🟢';
+      return '●';
     case 'Medium':
-      return '🟡';
+      return '●';
     case 'Hard':
-      return '🔴';
+      return '●';
     default:
-      return '⚪';
+      return '○';
   }
 }
 
@@ -210,17 +189,25 @@ function getDifficultyBadge(difficulty: string): string {
  * Generate empty README for new repository
  */
 function generateEmptyReadme(): string {
-  return `# 🚀 LeetCode Solutions
+  const lastUpdated = new Date().toISOString().split('T')[0];
+  
+  return `# DevGrid LeetCode Archive
 
-![Total Solved](https://img.shields.io/badge/Total-0-brightgreen)
+Automated LeetCode solutions synchronized to GitHub.
 
-## 📊 Statistics
+## Statistics
 
-No solutions synced yet. Start solving problems on LeetCode!
+\`\`\`
+Total Solved    0
+Easy            0
+Medium          0
+Hard            0
+\`\`\`
+
+Start solving problems on LeetCode to populate this repository.
 
 ---
 
-*Last updated: ${new Date().toISOString().split('T')[0]}*
-*Auto-generated by [DevGrid](https://github.com/yourusername/devgrid)*
+Last updated: ${lastUpdated}
 `;
 }

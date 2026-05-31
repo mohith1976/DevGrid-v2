@@ -30,3 +30,21 @@ npm-debug.log*
 
 # Documentation and development notes
 Instruction/
+
+# Build configuration files (keep in repo but ignore if needed)
+# vite.config.*.ts
+# copy-files.js
+
+# Package lock (optional - uncomment if using yarn)
+# package-lock.json
+
+# Test files and temporary files
+*.test.ts
+*.spec.ts
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

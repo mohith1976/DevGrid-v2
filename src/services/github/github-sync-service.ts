@@ -4,7 +4,7 @@
  */
 
 import { Submission } from '../../domain/submission';
-import { generateMarkdown, formatMemory } from '../markdown/markdown-generator';
+import { generateMarkdown } from '../markdown/markdown-generator';
 import { getCurrentConfig } from './github-config-service';
 import { GitHubClient } from './github-client';
 import { generateFolderName, generateSolutionFileName } from '../../utils/file-naming';
@@ -72,7 +72,9 @@ export async function syncSubmissionToGitHub(submission: Submission): Promise<vo
       submission.title,
       submission.language,
       submission.runtime,
-      submission.memory
+      submission.runtimePercentile,
+      submission.memory,
+      submission.memoryPercentile
     );
 
     // Step 7: Upload files
@@ -167,22 +169,31 @@ async function updateMetadataIndex(
 
 /**
  * Generate commit message with runtime and memory statistics
+ * Format: Time: X ms (XX.XX%), Space: X MB (XX.XX%) - DevGrid
  *
- * @param operation - "Add" or "Update"
- * @param title - Problem title
- * @param language - Programming language
+ * @param _operation - "Add" or "Update" (unused but kept for API consistency)
+ * @param _title - Problem title (unused but kept for API consistency)
+ * @param _language - Programming language (unused but kept for API consistency)
  * @param runtime - Runtime in milliseconds
+ * @param runtimePercentile - Runtime percentile (0-100)
  * @param memory - Memory in bytes
+ * @param memoryPercentile - Memory percentile (0-100)
  * @returns Formatted commit message
  */
 function generateCommitMessage(
-  operation: 'Add' | 'Update',
-  title: string,
-  language: string,
+  _operation: 'Add' | 'Update',
+  _title: string,
+  _language: string,
   runtime: number,
-  memory: number
+  runtimePercentile: number | undefined,
+  memory: number,
+  memoryPercentile: number | undefined
 ): string {
-  const runtimeStr = `${runtime}ms`;
-  const memoryStr = formatMemory(memory);
-  return `${operation}: ${title} [${language}] | Runtime: ${runtimeStr} | Memory: ${memoryStr}`;
+  const runtimeStr = `${runtime} ms`;
+  const runtimePercent = runtimePercentile !== undefined ? `${runtimePercentile.toFixed(2)}%` : 'N/A';
+  
+  const memoryMB = (memory / (1024 * 1024)).toFixed(1);
+  const memoryPercent = memoryPercentile !== undefined ? `${memoryPercentile.toFixed(2)}%` : 'N/A';
+  
+  return `Time: ${runtimeStr} (${runtimePercent}), Space: ${memoryMB} MB (${memoryPercent}) - DevGrid`;
 }
