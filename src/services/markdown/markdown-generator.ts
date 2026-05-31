@@ -110,14 +110,19 @@ export function generateMarkdown(submission: Submission): string {
     const runtime = formatRuntime(submission.runtime);
     const memory = formatMemory(submission.memory);
     const languageFence = getLanguageFence(submission.language);
+    const topics = submission.topics.map(t => t.name);
+    const submissionDate = new Date().toISOString().split('T')[0];
 
     // Generate markdown using template
     const markdown = submissionTemplate(
       submission.title,
       problemUrl,
+      submission.difficulty,
+      topics,
       submission.language,
       runtime,
       memory,
+      submissionDate,
       submission.code,
       languageFence
     );

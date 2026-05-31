@@ -4,6 +4,20 @@
  */
 
 /**
+ * Topic tag for a problem
+ */
+export interface TopicTag {
+  /** Tag identifier */
+  tagId: string;
+  
+  /** Tag slug (e.g., "array", "two-pointers") */
+  slug: string;
+  
+  /** Tag display name (e.g., "Array", "Two Pointers") */
+  name: string;
+}
+
+/**
  * Submission represents a LeetCode submission with all its metadata
  */
 export interface Submission {
@@ -33,6 +47,12 @@ export interface Submission {
 
   /** Status code (10 = Accepted) */
   statusCode: number;
+
+  /** Problem difficulty (Easy, Medium, Hard) */
+  difficulty: string;
+
+  /** Topic tags for the problem */
+  topics: TopicTag[];
 }
 
 /**

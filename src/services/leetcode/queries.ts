@@ -39,6 +39,7 @@ export const SUBMISSION_DETAILS_QUERY = `
         questionId
         titleSlug
         hasFrontendPreview
+        difficulty
       }
       notes
       flagType
@@ -94,6 +95,7 @@ export interface LeetCodeQuestion {
   questionId: string;
   titleSlug: string;
   hasFrontendPreview: boolean;
+  difficulty: string;
 }
 
 /**

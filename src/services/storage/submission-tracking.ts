@@ -3,7 +3,7 @@
  * Tracks synced submissions for statistics and duplicate detection
  */
 
-import { Submission } from '../../domain/submission';
+import { Submission, TopicTag } from '../../domain/submission';
 
 /**
  * Synced submission metadata
@@ -16,6 +16,8 @@ export interface SyncedSubmission {
   language: string;
   runtime: number;
   memory: number;
+  difficulty: string;
+  topics: TopicTag[];
   syncedAt: number;
   folderName: string;
 }
@@ -55,6 +57,8 @@ export async function trackSubmission(
     language: submission.language,
     runtime: submission.runtime,
     memory: submission.memory,
+    difficulty: submission.difficulty,
+    topics: submission.topics,
     syncedAt: Date.now(),
     folderName,
   };
@@ -71,7 +75,14 @@ export async function trackSubmission(
  */
 export async function getAllSyncedSubmissions(): Promise<SyncedSubmission[]> {
   const cache = await getCache();
-  return Object.values(cache.submissions);
+  const submissions = Object.values(cache.submissions);
+  
+  // Ensure all submissions have topics array (migration for old data)
+  return submissions.map(sub => ({
+    ...sub,
+    difficulty: sub.difficulty || 'Unknown',
+    topics: Array.isArray(sub.topics) ? sub.topics : [],
+  }));
 }
 
 /**

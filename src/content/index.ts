@@ -7,11 +7,17 @@ import { SubmissionDetector } from './submission-detector';
 import { fetchSubmissionDetails } from '../services/leetcode/submission-service';
 import { isAccepted } from '../domain/submission';
 import { syncSubmissionToGitHub } from '../services/github/github-sync-service';
+import { recoverCacheIfNeeded } from '../services/storage/cache-recovery';
 
 console.log('DevGrid content script loaded on:', window.location.href);
 
 // Initialize submission detector
 const detector = new SubmissionDetector();
+
+// Attempt cache recovery on startup
+recoverCacheIfNeeded().catch((error) => {
+  console.error('DevGrid: Cache recovery failed:', error);
+});
 
 /**
  * Check for submission and process if accepted

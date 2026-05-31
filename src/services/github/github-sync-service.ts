@@ -10,6 +10,13 @@ import { GitHubClient } from './github-client';
 import { generateFolderName, generateSolutionFileName } from '../../utils/file-naming';
 import { trackSubmission, isSubmissionSynced } from '../storage/submission-tracking';
 import { generateRepositoryReadme } from '../markdown/repository-readme-generator';
+import {
+  createEmptyIndex,
+  updateSubmissionInIndex,
+  serializeIndex,
+  parseIndex,
+  MetadataIndex,
+} from '../storage/metadata-index';
 
 /**
  * Sync accepted submission to GitHub
@@ -21,8 +28,9 @@ import { generateRepositoryReadme } from '../markdown/repository-readme-generato
  * 4. Generate markdown
  * 5. Upload README.md to problem folder
  * 6. Upload solution file to problem folder
- * 7. Track submission
- * 8. Update repository README
+ * 7. Track submission in local cache
+ * 8. Update .devgrid/index.json on GitHub
+ * 9. Update repository README
  *
  * @param submission - Accepted submission to sync
  * @returns Promise that resolves when sync is complete
@@ -87,10 +95,16 @@ export async function syncSubmissionToGitHub(submission: Submission): Promise<vo
     console.log('[GitHub Sync] README uploaded');
     console.log('[GitHub Sync] Solution file uploaded');
 
-    // Step 8: Track submission
+    // Step 8: Track submission in local cache
     await trackSubmission(submission, folderName);
 
-    // Step 9: Update repository README
+    // Step 9: Update .devgrid/index.json on GitHub
+    await updateMetadataIndex(client, submission, folderName);
+
+    // Step 10: Update repository README
+    // Delay to ensure chrome.storage.local write completes
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const repositoryReadme = await generateRepositoryReadme();
     await client.createOrUpdateFile({
       path: 'README.md',
@@ -106,6 +120,48 @@ export async function syncSubmissionToGitHub(submission: Submission): Promise<vo
     } else {
       console.error('[GitHub Sync] Upload failed: Unknown error');
     }
+  }
+}
+
+/**
+ * Update metadata index on GitHub
+ *
+ * @param client - GitHub client
+ * @param submission - Submission to add to index
+ * @param folderName - Folder name where submission is stored
+ */
+async function updateMetadataIndex(
+  client: GitHubClient,
+  submission: Submission,
+  folderName: string
+): Promise<void> {
+  try {
+    // Try to fetch existing index
+    let index: MetadataIndex;
+    
+    try {
+      const existingContent = await client.getFileContent('.devgrid/index.json');
+      index = parseIndex(existingContent);
+    } catch {
+      // Index doesn't exist, create new one
+      index = createEmptyIndex();
+    }
+
+    // Update index with new submission
+    index = updateSubmissionInIndex(index, submission, folderName);
+
+    // Serialize and upload
+    const indexContent = serializeIndex(index);
+    await client.createOrUpdateFile({
+      path: '.devgrid/index.json',
+      content: indexContent,
+      message: `Update metadata index`,
+    });
+
+    console.log('[GitHub Sync] Metadata index updated');
+  } catch (error) {
+    console.error('[GitHub Sync] Failed to update metadata index:', error);
+    // Don't throw - this is not critical for the sync to succeed
   }
 }
 

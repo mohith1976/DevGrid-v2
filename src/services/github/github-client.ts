@@ -224,6 +224,50 @@ export class GitHubClient {
   }
 
   /**
+   * Get file content from repository
+   *
+   * @param path - File path
+   * @returns Promise resolving to file content as string
+   * @throws Error if file doesn't exist or request fails
+   */
+  async getFileContent(path: string): Promise<string> {
+    try {
+      const response = await fetch(
+        `${GITHUB_API_BASE}/repos/${this.owner}/${this.repo}/contents/${path}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+
+      if (response.status === 404) {
+        throw new Error(`File not found: ${path}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to get file content: ${response.status}`);
+      }
+
+      const data: { content: string; encoding: string } = await response.json();
+
+      // Decode base64 content
+      if (data.encoding === 'base64') {
+        return decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+      }
+
+      return data.content;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network failure while fetching file content');
+    }
+  }
+
+  /**
    * Create a new file
    *
    * @param request - File upload request

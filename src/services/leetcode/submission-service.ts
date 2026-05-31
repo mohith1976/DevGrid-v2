@@ -76,6 +76,16 @@ function mapToSubmission(
   // Generate title from titleSlug (convert "two-sum" to "Two Sum")
   const title = generateTitleFromSlug(details.question.titleSlug);
 
+  // Extract difficulty (default to "Unknown" if not provided)
+  const difficulty = details.question.difficulty || 'Unknown';
+
+  // Map topic tags to domain model
+  const topics = (details.topicTags || []).map((tag) => ({
+    tagId: tag.tagId,
+    slug: tag.slug,
+    name: tag.name,
+  }));
+
   return {
     submissionId,
     questionId: details.question.questionId,
@@ -86,6 +96,8 @@ function mapToSubmission(
     runtime,
     memory,
     statusCode: details.statusCode,
+    difficulty,
+    topics,
   };
 }
 
