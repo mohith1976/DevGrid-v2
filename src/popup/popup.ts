@@ -7,6 +7,7 @@ import { validateAndSaveConfig, getCurrentConfig, disconnect } from '../services
 import { GitHubConfig } from '../domain/github-config';
 import { getAllSyncedSubmissions } from '../services/storage/submission-tracking';
 import { getRepositoryInfo } from '../services/storage/github-storage';
+import { clearAllStatisticsAndUpdateReadme } from '../services/storage/cache-clear';
 
 // DOM Elements
 const connectedState = document.getElementById('connected-state')!;
@@ -30,6 +31,7 @@ const errorMessage = document.getElementById('error-message')!;
 const connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
 
 const openRepoBtn = document.getElementById('open-repo-btn')!;
+const resetStatsBtn = document.getElementById('reset-stats-btn') as HTMLButtonElement;
 const disconnectBtn = document.getElementById('disconnect-btn')!;
 
 /**
@@ -232,6 +234,48 @@ openRepoBtn.addEventListener('click', async () => {
     }
   } catch (error) {
     console.error('Failed to open repository:', error);
+  }
+});
+
+/**
+ * Handle reset statistics button
+ */
+resetStatsBtn.addEventListener('click', async () => {
+  const confirmed = confirm(
+    'Are you sure you want to reset all statistics?\n\n' +
+    'This will:\n' +
+    '• Clear all synced submission records\n' +
+    '• Clear problem statistics\n' +
+    '• Update GitHub README to show zero stats\n\n' +
+    'Your GitHub connection and repository data will NOT be affected.\n' +
+    'Future submissions will rebuild statistics normally.'
+  );
+  
+  if (confirmed) {
+    try {
+      resetStatsBtn.disabled = true;
+      resetStatsBtn.textContent = 'Resetting...';
+      
+      await clearAllStatisticsAndUpdateReadme();
+      
+      // Reload the popup to show reset state
+      const config = await getCurrentConfig();
+      if (config) {
+        await loadConnectedState(config);
+      }
+      
+      resetStatsBtn.disabled = false;
+      resetStatsBtn.textContent = 'Reset Statistics';
+      
+      alert('Statistics reset successfully!\n\nGitHub README has been updated.');
+    } catch (error) {
+      console.error('Failed to reset statistics:', error);
+      resetStatsBtn.disabled = false;
+      resetStatsBtn.textContent = 'Reset Statistics';
+      
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to reset statistics: ${errorMsg}\n\nPlease try again.`);
+    }
   }
 });
 

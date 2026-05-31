@@ -159,6 +159,57 @@ export class GitHubClient {
   }
 
   /**
+   * Update repository metadata (description, homepage, topics)
+   * Only updates if fields are empty
+   *
+   * @returns Promise that resolves when update is complete
+   * @throws Error if update fails
+   */
+  async updateRepositoryMetadata(): Promise<void> {
+    console.log('[GitHub] Updating repository metadata');
+
+    try {
+      // First, get current repository info
+      const repoInfo = await this.getRepository();
+
+      // Only update if description is empty
+      if (repoInfo.description && repoInfo.description.trim().length > 0) {
+        console.log('[GitHub] Repository already has description, skipping update');
+        return;
+      }
+
+      // Update repository with description, homepage, and topics
+      const response = await fetch(
+        `${GITHUB_API_BASE}/repos/${this.owner}/${this.repo}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            description: 'LeetCode solutions synchronized automatically using DevGrid.',
+            homepage: 'https://github.com/mohith1976/DevGrid-v2',
+            topics: ['leetcode', 'algorithms', 'dsa', 'chrome-extension', 'typescript', 'devgrid'],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update repository metadata: ${response.status} ${response.statusText}`);
+      }
+
+      console.log('[GitHub] Repository metadata updated successfully');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network failure while updating repository metadata');
+    }
+  }
+
+  /**
    * Create or update a file in the repository
    *
    * @param request - File upload request

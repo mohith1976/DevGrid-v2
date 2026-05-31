@@ -17,6 +17,11 @@ const GITHUB_CONFIG_KEY = 'github_config';
 const GITHUB_REPO_INFO_KEY = 'github_repo_info';
 
 /**
+ * Storage key for repository metadata update flag
+ */
+const GITHUB_REPO_METADATA_UPDATED_KEY = 'github_repo_metadata_updated';
+
+/**
  * Save GitHub configuration to chrome.storage.local
  *
  * @param config - GitHub configuration to save
@@ -122,3 +127,39 @@ export async function getRepositoryInfo(): Promise<RepositoryInfo | null> {
     });
   });
 }
+
+/**
+ * Check if repository metadata has been updated
+ *
+ * @returns Promise resolving to true if metadata has been updated, false otherwise
+ */
+export async function hasRepositoryMetadataBeenUpdated(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get([GITHUB_REPO_METADATA_UPDATED_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(`Failed to check metadata update flag: ${chrome.runtime.lastError.message}`));
+      } else {
+        resolve(result[GITHUB_REPO_METADATA_UPDATED_KEY] === true);
+      }
+    });
+  });
+}
+
+/**
+ * Mark repository metadata as updated
+ *
+ * @returns Promise that resolves when flag is set
+ */
+export async function markRepositoryMetadataAsUpdated(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [GITHUB_REPO_METADATA_UPDATED_KEY]: true }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(`Failed to set metadata update flag: ${chrome.runtime.lastError.message}`));
+      } else {
+        console.log('[Storage] Repository metadata marked as updated');
+        resolve();
+      }
+    });
+  });
+}
+

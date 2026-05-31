@@ -17,6 +17,11 @@ import {
   parseIndex,
   MetadataIndex,
 } from '../storage/metadata-index';
+import {
+  hasRepositoryMetadataBeenUpdated,
+  markRepositoryMetadataAsUpdated,
+  saveRepositoryInfo,
+} from '../storage/github-storage';
 
 /**
  * Sync accepted submission to GitHub
@@ -116,6 +121,9 @@ export async function syncSubmissionToGitHub(submission: Submission): Promise<vo
 
     console.log('[GitHub Sync] Repository README updated');
     console.log('[GitHub Sync] Upload complete');
+    
+    // Step 11: Update repository metadata (description, homepage, topics) after first sync
+    await updateRepositoryMetadataIfNeeded(client);
   } catch (error) {
     if (error instanceof Error) {
       console.error('[GitHub Sync] Upload failed:', error.message);
@@ -163,6 +171,41 @@ async function updateMetadataIndex(
     console.log('[GitHub Sync] Metadata index updated');
   } catch (error) {
     console.error('[GitHub Sync] Failed to update metadata index:', error);
+    // Don't throw - this is not critical for the sync to succeed
+  }
+}
+
+/**
+ * Update repository metadata (description, homepage, topics) if not already done
+ * Only runs once after the first successful sync
+ *
+ * @param client - GitHub client
+ */
+async function updateRepositoryMetadataIfNeeded(client: GitHubClient): Promise<void> {
+  try {
+    // Check if we've already updated the metadata
+    const alreadyUpdated = await hasRepositoryMetadataBeenUpdated();
+    
+    if (alreadyUpdated) {
+      console.log('[GitHub Sync] Repository metadata already updated, skipping');
+      return;
+    }
+
+    console.log('[GitHub Sync] Updating repository metadata for first time');
+    
+    // Update repository metadata
+    await client.updateRepositoryMetadata();
+    
+    // Mark as updated so we don't do it again
+    await markRepositoryMetadataAsUpdated();
+    
+    // Refresh repository info in storage
+    const repoInfo = await client.getRepository();
+    await saveRepositoryInfo(repoInfo);
+    
+    console.log('[GitHub Sync] Repository metadata updated successfully');
+  } catch (error) {
+    console.error('[GitHub Sync] Failed to update repository metadata:', error);
     // Don't throw - this is not critical for the sync to succeed
   }
 }
