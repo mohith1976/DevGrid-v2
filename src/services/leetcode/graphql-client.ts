@@ -63,8 +63,6 @@ export async function executeGraphQLQuery<T>(
   variables: GraphQLVariables = {},
   operationName?: string
 ): Promise<T> {
-  console.log('[GraphQL] Executing query with variables:', variables);
-
   try {
     // Extract CSRF token from cookies if available
     const csrfToken = getCsrfToken();
@@ -94,13 +92,6 @@ export async function executeGraphQLQuery<T>(
       payload.operationName = operationName;
     }
 
-    // Debug logging
-    console.log('[GraphQL] Payload:', {
-      operationName: payload.operationName,
-      query: payload.query,
-      variables: payload.variables,
-    });
-
     const response = await fetch(LEETCODE_GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers,
@@ -113,8 +104,6 @@ export async function executeGraphQLQuery<T>(
     }
 
     const result: GraphQLResponse<T> = await response.json();
-
-    console.log('[GraphQL] Response received:', result);
 
     // Check for GraphQL errors
     if (result.errors && result.errors.length > 0) {

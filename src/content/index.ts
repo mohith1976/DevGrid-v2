@@ -6,6 +6,7 @@
 import { SubmissionDetector } from './submission-detector';
 import { fetchSubmissionDetails } from '../services/leetcode/submission-service';
 import { isAccepted } from '../domain/submission';
+import { generateMarkdown } from '../services/markdown/markdown-generator';
 
 console.log('DevGrid content script loaded on:', window.location.href);
 
@@ -13,47 +14,29 @@ console.log('DevGrid content script loaded on:', window.location.href);
 const detector = new SubmissionDetector();
 
 /**
- * Check for submission and log result
- * PHASE 2 INTEGRATION TEST: Also fetch submission details
+ * Check for submission and process if accepted
  */
 async function checkSubmission(): Promise<void> {
   const result = detector.detect();
 
   if (result) {
-    console.log('DevGrid: Submission detected:', result);
+    console.log('DevGrid: Submission detected:', result.submissionId);
 
-    // PHASE 2 INTEGRATION TEST: Fetch submission details
     try {
-      console.log('[Integration Test] Fetching submission details...');
       const submission = await fetchSubmissionDetails(result.submissionId);
 
-      console.log('[Integration Test] ✓ Submission fetched successfully:');
-      console.log('[Integration Test] Submission Object:', submission);
-      console.log('[Integration Test] Field Types:', {
-        submissionId: typeof submission.submissionId,
-        questionId: typeof submission.questionId,
-        title: typeof submission.title,
-        slug: typeof submission.slug,
-        language: typeof submission.language,
-        code: typeof submission.code,
-        runtime: typeof submission.runtime,
-        memory: typeof submission.memory,
-        statusCode: typeof submission.statusCode,
-      });
-      console.log('[Integration Test] Is Accepted:', isAccepted(submission));
-
       if (isAccepted(submission)) {
-        console.log(
-          `[Integration Test] ✓ Accepted submission for: ${submission.title} (${submission.language})`
-        );
-        console.log(`[Integration Test] Runtime: ${submission.runtime}ms`);
-        console.log(`[Integration Test] Memory: ${submission.memory} bytes`);
+        console.log(`DevGrid: Accepted submission - ${submission.title} (${submission.language})`);
+
+        // Generate markdown
+        generateMarkdown(submission);
+
+        // TODO: Phase 4 - Send to GitHub
+        console.log('DevGrid: Markdown generated, ready for GitHub sync');
       }
     } catch (error) {
-      console.error('[Integration Test] ✗ Failed to fetch submission:', error);
+      console.error('DevGrid: Failed to fetch submission:', error);
     }
-  } else {
-    console.log('DevGrid: Not a submission page');
   }
 }
 

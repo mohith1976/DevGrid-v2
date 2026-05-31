@@ -15,8 +15,6 @@ import { SUBMISSION_DETAILS_QUERY, SubmissionDetailsResponse } from './queries';
  * @throws Error if the request fails or data is invalid
  */
 export async function fetchSubmissionDetails(submissionId: string): Promise<Submission> {
-  console.log(`[SubmissionService] Fetching details for submission: ${submissionId}`);
-
   try {
     // Convert submissionId to number for GraphQL
     const submissionIdNum = parseInt(submissionId, 10);
@@ -34,13 +32,6 @@ export async function fetchSubmissionDetails(submissionId: string): Promise<Subm
 
     // Map GraphQL response to domain model
     const submission = mapToSubmission(submissionId, response);
-
-    console.log('[SubmissionService] Successfully fetched submission:', {
-      submissionId: submission.submissionId,
-      title: submission.title,
-      language: submission.language,
-      statusCode: submission.statusCode,
-    });
 
     return submission;
   } catch (error) {
@@ -84,19 +75,6 @@ function mapToSubmission(
 
   // Generate title from titleSlug (convert "two-sum" to "Two Sum")
   const title = generateTitleFromSlug(details.question.titleSlug);
-
-  console.log('[SubmissionService] Mapping response:', {
-    questionId: details.question.questionId,
-    titleSlug: details.question.titleSlug,
-    generatedTitle: title,
-    langType: typeof details.lang,
-    langValue: details.lang,
-    runtimeType: typeof details.runtime,
-    runtimeValue: details.runtime,
-    memoryType: typeof details.memory,
-    memoryValue: details.memory,
-    statusCode: details.statusCode,
-  });
 
   return {
     submissionId,
