@@ -6,7 +6,7 @@
 import { SubmissionDetector } from './submission-detector';
 import { fetchSubmissionDetails } from '../services/leetcode/submission-service';
 import { isAccepted } from '../domain/submission';
-import { generateMarkdown } from '../services/markdown/markdown-generator';
+import { syncSubmissionToGitHub } from '../services/github/github-sync-service';
 
 console.log('DevGrid content script loaded on:', window.location.href);
 
@@ -23,16 +23,35 @@ async function checkSubmission(): Promise<void> {
     console.log('DevGrid: Submission detected:', result.submissionId);
 
     try {
-      const submission = await fetchSubmissionDetails(result.submissionId);
+      // Poll for submission details until they're ready
+      const maxAttempts = 10;
+      const delayMs = 2000;
+      let submission = null;
+      
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        submission = await fetchSubmissionDetails(result.submissionId);
+        
+        // Check if submission details are ready
+        const isReady = submission.runtime !== null && 
+                       submission.memory !== null && 
+                       submission.statusCode !== 16;
+        
+        if (isReady) {
+          break;
+        }
+        
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+      
+      if (!submission) {
+        return;
+      }
 
       if (isAccepted(submission)) {
         console.log(`DevGrid: Accepted submission - ${submission.title} (${submission.language})`);
-
-        // Generate markdown
-        generateMarkdown(submission);
-
-        // TODO: Phase 4 - Send to GitHub
-        console.log('DevGrid: Markdown generated, ready for GitHub sync');
+        await syncSubmissionToGitHub(submission);
       }
     } catch (error) {
       console.error('DevGrid: Failed to fetch submission:', error);
