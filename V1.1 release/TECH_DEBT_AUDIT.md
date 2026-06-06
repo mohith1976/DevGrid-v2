@@ -6,6 +6,76 @@ This document tracks technical debt, areas for refactoring, and future improveme
 
 ---
 
+Things I'd prioritize
+1. Authentication redesign
+
+Highest priority.
+
+Investigate:
+
+GitHub OAuth
+
+or
+
+GitHub App
+
+or
+
+fine-grained tokens
+
+You don't have to implement immediately.
+
+But understand the tradeoffs.
+
+2. Security review
+
+Ask:
+
+Can page JS access token?
+Can another extension access token?
+Can storage be abused?
+Can sync be spoofed?
+3. Better onboarding
+
+Your popup works.
+
+But can a first-time user install and use it in under 2 minutes?
+
+If not, improve that.
+
+4. Polish
+
+Things users notice:
+
+animations
+empty states
+error messages
+loading states
+readme formatting
+
+These matter more than another analytics feature.
+
+What I would NOT do
+
+would not spend the next week building:
+
+charts
+leaderboards
+AI summaries
+OAuth backend
+cloud sync
+
+Yet.
+
+
+
+
+Next few days
+Security review
+Authentication review
+UX review
+Bug fixes
+
 ## Critical Technical Debt
 
 ### 1. Token Security
