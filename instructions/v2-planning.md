@@ -1,6 +1,6 @@
 # DevGrid V2 Roadmap
 
-Version: 2.0
+Version: 2.1
 
 Status: ACTIVE
 
@@ -44,40 +44,43 @@ COMPLETED
 
 ---
 
-## Objective
-
-Determine the most appropriate long-term authentication architecture.
-
----
-
 ## Outcome
 
 Selected Architecture:
 
-GitHub App
+GitHub OAuth
 +
-Private Authentication Service
+Minimal Authentication Service
 
 ---
 
-## Key Findings
+## Why OAuth Was Selected
 
-* Authentication onboarding is the largest adoption barrier.
-* Manual token generation creates unnecessary friction.
-* GitHub App architecture improves trust.
-* GitHub App architecture improves onboarding.
-* GitHub App architecture improves permission transparency.
+* Familiar Sign In With GitHub experience
+* Eliminates Personal Access Tokens
+* Reduces onboarding friction
+* Improves adoption
+* Provides sufficient security for DevGrid's use case
 
 ---
 
-## Deliverables
+## Why GitHub Apps Were Rejected
 
-Completed:
+GitHub Apps introduced additional onboarding complexity:
 
-* AUTH_ARCHITECTURE.md
-* Threat Model
-* Authentication Decision Matrix
-* Migration Strategy
+Sign In
+↓
+Install App
+↓
+Choose Account
+↓
+Choose Repository Access
+↓
+Authorize
+↓
+Return To Extension
+
+This conflicted with DevGrid's goal of making authentication simple and approachable.
 
 ---
 
@@ -89,45 +92,13 @@ COMPLETED
 
 ---
 
-## Objective
-
-Review current DevGrid security posture.
-
----
-
-## Areas Reviewed
-
-* Token handling
-* Token storage
-* Extension permissions
-* Chrome Extension boundaries
-* GitHub API usage
-* Storage integrity
-* Supply chain risk
-* Threat model
-
----
-
 ## Outcome
 
-Security Rating:
-
-A-
-
-Architecture Approved
+Security Review Approved
 
 No critical vulnerabilities identified.
 
----
-
-## Deliverables
-
-Completed:
-
-* SECURITY_REVIEW.md
-* THREAT_MODEL.md
-* SECURITY_CHECKLIST.md
-* FINDINGS_SUMMARY.md
+Architecture Approved.
 
 ---
 
@@ -139,55 +110,27 @@ COMPLETED
 
 ---
 
-## Objective
-
-Convert findings into permanent architecture decisions.
-
----
-
 ## Approved ADRs
 
-ADR-001
+ADR-001 Authentication Strategy
 
-Authentication Strategy
+ADR-002 Credential Storage Strategy
 
----
+ADR-003 Permission Model
 
-ADR-002
+ADR-004 Credential Lifecycle Management
 
-Credential Storage Strategy
+ADR-005 Repository Boundary Model
 
----
-
-ADR-003
-
-Permission Model
-
----
-
-ADR-004
-
-Credential Lifecycle Management
-
----
-
-ADR-005
-
-Repository Boundary Model
-
----
-
-ADR-006
-
-Onboarding Strategy
+ADR-006 Onboarding Strategy
 
 ---
 
 ## Outcome
 
-Architecture Frozen
+Architecture Frozen.
 
-No additional architectural decisions should be introduced during implementation without a new ADR.
+No architecture changes without explicit approval.
 
 ---
 
@@ -199,11 +142,11 @@ READY
 
 ---
 
-# Phase 4A - Authentication Integration
+# Phase 4A - OAuth Integration
 
 Objective:
 
-Replace PAT authentication with GitHub App authentication.
+Replace PAT authentication with GitHub OAuth authentication.
 
 ---
 
@@ -212,26 +155,9 @@ Replace PAT authentication with GitHub App authentication.
 Implement:
 
 * Authentication abstraction
-* Auth service integration
+* OAuth integration
 * Session management
 * Login workflows
-
-## Product Ownership Rule
-
-DevGrid-Extension is the product.
-
-Kiro must not move product functionality into devgrid-auth.
-
-The existence of devgrid-auth does not justify moving:
-
-* Submission processing
-* Repository synchronization
-* Markdown generation
-* Statistics
-* User workflows
-
-out of the extension.
-
 * Logout workflows
 * Session validation
 
@@ -273,31 +199,11 @@ Apply improvements identified during Phase 2.
 
 Implement:
 
-* GitHub rate limit handling
+* Rate limit handling
 * Message validation
 * Error handling improvements
 * Session validation improvements
 * Security hardening
-
----
-
-## Deliverables
-
-Improved reliability
-
-Improved resilience
-
-Improved security posture
-
----
-
-## Success Criteria
-
-Authentication failures are handled gracefully.
-
-Rate limit events are handled gracefully.
-
-Invalid messages are rejected safely.
 
 ---
 
@@ -317,16 +223,6 @@ Improve:
 * Repository selection experience
 * Setup guidance
 * Error messaging
-
----
-
-## Deliverables
-
-Improved onboarding flow
-
-Improved repository setup flow
-
-Improved authentication UX
 
 ---
 
@@ -352,8 +248,6 @@ without generating tokens manually.
 
 # Explicitly Out Of Scope
 
-The following remain out of scope for V2:
-
 * Analytics dashboards
 * AI features
 * Leaderboards
@@ -363,8 +257,6 @@ The following remain out of scope for V2:
 * Theme customization
 * Advanced statistics
 * README redesign projects
-
-These may be considered in future versions.
 
 ---
 
@@ -395,3 +287,13 @@ V2 succeeds when users trust:
 * Security model
 
 while maintaining the simplicity and reliability established in V1.
+
+The ideal DevGrid onboarding flow is:
+
+Install Extension
+↓
+Sign In With GitHub
+↓
+Select Repository
+↓
+Start Solving Problems

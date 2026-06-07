@@ -1,6 +1,6 @@
 # DevGrid Extension Engineering Constitution
 
-Version: 2.0
+Version: 2.1
 
 Status: ACTIVE
 
@@ -61,85 +61,23 @@ Implementation follows architecture.
 
 ---
 
-## Spec Mode Restrictions
-
-When operating in Spec Mode:
-
-Kiro may:
-
-* Clarify requirements
-* Break work into tasks
-* Create implementation plans
-* Create technical designs that comply with approved ADRs
-
-Kiro may not:
-
-* Change repository ownership
-* Change authentication architecture
-* Change communication models
-* Change security models
-* Change deployment models
-* Introduce new infrastructure
-* Create replacement specifications
-
-without explicit user approval.
-
----
-
 ## Architecture Freeze
-
-Phase 1, Phase 2, and Phase 3 are complete.
-
-Architecture is frozen.
 
 The following decisions are locked:
 
 * Two repository architecture
-* GitHub App authentication
-* Private authentication service
+* GitHub OAuth authentication
+* Minimal authentication service
 * Repository boundaries
 * Permission model
-* Credential storage strategy
 * Credential lifecycle strategy
 * Onboarding strategy
 
-These decisions must be treated as requirements, not suggestions.
+These decisions are requirements.
+
+Not suggestions.
 
 ---
-
-## No Autonomous Expansion
-
-Kiro must not independently introduce:
-
-* Databases
-* Analytics systems
-* Queues
-* Event buses
-* Additional services
-* Additional repositories
-* Telemetry systems
-* Monitoring platforms
-* New infrastructure
-
-unless explicitly approved through a new ADR.
-
----
-
-## Documentation Discipline
-
-New documents may only be created when:
-
-* Requested by the user
-* Required by an approved roadmap phase
-* Required by implementation
-
-Do not generate speculative specifications.
-
-Do not generate future-roadmap documents.
-
-Do not create "recommended architecture" documents.
-
-Architecture decisions already exist.
 
 ## Product Ownership Rule
 
@@ -157,6 +95,25 @@ The existence of devgrid-auth does not justify moving:
 
 out of the extension.
 
+---
+
+## No Autonomous Expansion
+
+Kiro must not independently introduce:
+
+* Databases
+* Analytics systems
+* Queues
+* Event buses
+* Additional services
+* Additional repositories
+* Telemetry systems
+* Monitoring platforms
+* New infrastructure
+
+unless explicitly approved.
+
+---
 
 # Project Mission
 
@@ -168,9 +125,38 @@ DevGrid automatically synchronizes LeetCode progress to GitHub while remaining:
 * Easy to use
 * Easy to maintain
 
-DevGrid is browser-first.
-
 The extension is the product.
+
+The browser is the primary runtime.
+
+---
+
+# Authentication Strategy
+
+DevGrid uses:
+
+GitHub OAuth
++
+Minimal Authentication Service
+
+The purpose of authentication is:
+
+* Eliminate Personal Access Tokens
+* Reduce onboarding friction
+* Improve trust
+* Provide familiar Sign In With GitHub UX
+
+Users should experience:
+
+Install Extension
+↓
+Sign In With GitHub
+↓
+Select Repository
+↓
+Use DevGrid
+
+without manually generating credentials.
 
 ---
 
@@ -184,7 +170,7 @@ This repository owns:
 * Settings UI
 * Authentication UI
 * Status UI
-* Error handling UI
+* Error Handling UI
 
 ---
 
@@ -239,11 +225,11 @@ This repository owns:
 
 This repository DOES NOT own:
 
-* GitHub App secrets
-* OAuth credentials
+* OAuth Client Secret
 * Authentication infrastructure
 * Authorization callbacks
 * Secret management
+* OAuth configuration
 
 These belong exclusively to:
 
@@ -252,8 +238,6 @@ devgrid-auth
 ---
 
 # Multi Repository Architecture
-
-DevGrid consists of:
 
 Repository A
 
@@ -279,15 +263,17 @@ Architecture decisions originate from:
 
 devgrid-extension
 
-The authentication repository follows these decisions.
+The authentication repository follows those decisions.
 
 ---
 
 # Architectural Principles
 
-## Principle 1 - Product Logic Stays In The Extension
+## Principle 1
 
-Business logic belongs inside this repository.
+Product Logic Stays In The Extension
+
+Business logic belongs here.
 
 Examples:
 
@@ -299,23 +285,23 @@ Examples:
 
 must remain here.
 
-Business logic must never migrate into devgrid-auth.
-
 ---
 
-## Principle 2 - Direct GitHub Synchronization
+## Principle 2
 
-Synchronization must occur directly between:
+Direct GitHub Synchronization
+
+Correct:
 
 Extension
 ↓
 GitHub
 
-Never:
+Incorrect:
 
 Extension
 ↓
-Authentication Service
+Auth Service
 ↓
 GitHub
 
@@ -323,51 +309,41 @@ The authentication service is not a synchronization proxy.
 
 ---
 
-## Principle 3 - Browser First
+## Principle 3
 
-If functionality can safely execute inside the extension, it should remain inside the extension.
+Browser First
 
-Avoid unnecessary backend dependencies.
+If functionality can safely execute in the extension:
+
+Keep it in the extension.
+
+Avoid unnecessary backend dependency.
 
 ---
 
-## Principle 4 - Least Privilege
+## Principle 4
 
-Request only permissions that are required.
+Least Privilege
 
-Avoid broad host permissions.
+Request only required permissions.
 
 Avoid unnecessary Chrome permissions.
 
 ---
 
-## Principle 5 - Security Before Features
+## Principle 5
 
-Security improvements take priority over feature additions.
+Security Before Features
 
 Trust is a feature.
 
----
-
-## Principle 6 - Incremental Evolution
-
-Prefer:
-
-* Refactoring
-* Isolation
-* Hardening
-
-over rewrites.
-
-Working systems should evolve.
-
-Not restart.
+Security improvements take priority over feature additions.
 
 ---
 
-## Principle 7 - Documentation First
+## Principle 6
 
-Major changes require:
+Documentation First
 
 Research
 ↓
@@ -377,7 +353,7 @@ Decision
 ↓
 Implementation
 
-Implementation must not drive architecture.
+Implementation must never drive architecture.
 
 ---
 
@@ -386,8 +362,11 @@ Implementation must not drive architecture.
 src/
 
 ├── background/
+│
 ├── content/
+│
 ├── domain/
+│
 ├── popup/
 │
 ├── services/
@@ -399,195 +378,6 @@ src/
 │
 └── utils/
 
-No alternative structures should be introduced without architectural review.
-
----
-
-# Layer Responsibilities
-
-## background/
-
-Responsibilities:
-
-* Extension lifecycle
-* Workflow coordination
-* Event orchestration
-* Message routing
-* Sync coordination
-* Authentication coordination
-
-The background layer coordinates.
-
-It does not implement business logic.
-
----
-
-## content/
-
-Responsibilities:
-
-* DOM observation
-* Submission detection
-* LeetCode interaction
-* Data collection
-
-Content scripts collect information.
-
-Content scripts do not:
-
-* Call GitHub APIs
-* Perform synchronization
-* Manage authentication
-
----
-
-## domain/
-
-Responsibilities:
-
-* Domain entities
-* Contracts
-* Shared types
-* Business models
-
-Examples:
-
-* Submission
-* GitHubConfig
-* AuthState
-* Repository
-* SyncResult
-
-Services communicate through domain objects.
-
-Not raw API responses.
-
----
-
-## popup/
-
-Responsibilities:
-
-* User interaction
-* Configuration
-* Status display
-
-No business logic.
-
-UI calls services.
-
-Services perform work.
-
----
-
-## services/auth/
-
-Responsibilities:
-
-* Authentication abstraction
-* Login workflows
-* Logout workflows
-* Session validation
-* Authentication state
-
-All authentication communication must pass through this service.
-
-No other service may directly call authentication endpoints.
-
----
-
-## services/github/
-
-Responsibilities:
-
-* GitHub API communication
-* Repository operations
-* File management
-* Commit creation
-
-All GitHub communication belongs here.
-
----
-
-## services/leetcode/
-
-Responsibilities:
-
-* LeetCode communication
-* GraphQL operations
-* Problem retrieval
-* Submission retrieval
-
-All LeetCode communication belongs here.
-
----
-
-## services/markdown/
-
-Responsibilities:
-
-* README generation
-* Markdown formatting
-* Template processing
-
----
-
-## services/storage/
-
-Responsibilities:
-
-* chrome.storage access
-* Persistence
-* Configuration storage
-* Session storage
-
-All storage access belongs here.
-
----
-
-## utils/
-
-Pure utility functions only.
-
-Utilities must not:
-
-* Access APIs
-* Access storage
-* Implement workflows
-
----
-
-# Communication Rules
-
-The extension communicates with:
-
-* GitHub APIs
-* LeetCode APIs
-* devgrid-auth APIs
-
-through defined interfaces.
-
-No hidden coupling.
-
-No direct repository dependency.
-
-No shared source code.
-
----
-
-# Forbidden Changes
-
-Do not introduce:
-
-* Analytics systems
-* User tracking
-* Telemetry
-* Sync through backend
-* Business logic in UI
-* Business logic in content scripts
-* Hidden feature flags
-* Architecture bypasses
-
 ---
 
 # Definition Of Success
@@ -596,8 +386,20 @@ A successful DevGrid extension:
 
 * Detects submissions reliably
 * Synchronizes repositories reliably
-* Remains maintainable
-* Preserves user trust
 * Maintains least privilege
+* Preserves user trust
+* Eliminates Personal Access Tokens
 * Keeps product logic inside the extension
 * Remains independent from authentication infrastructure
+
+Users should be able to:
+
+Install Extension
+↓
+Sign In With GitHub
+↓
+Select Repository
+↓
+Use DevGrid
+
+with minimal onboarding friction.
