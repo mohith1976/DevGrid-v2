@@ -215,6 +215,23 @@ Implement:
 * Auth service integration
 * Session management
 * Login workflows
+
+## Product Ownership Rule
+
+DevGrid-Extension is the product.
+
+Kiro must not move product functionality into devgrid-auth.
+
+The existence of devgrid-auth does not justify moving:
+
+* Submission processing
+* Repository synchronization
+* Markdown generation
+* Statistics
+* User workflows
+
+out of the extension.
+
 * Logout workflows
 * Session validation
 
