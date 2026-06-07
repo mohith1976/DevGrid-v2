@@ -1,188 +1,244 @@
-# DevGrid Engineering Constitution
+# DevGrid Extension Engineering Constitution
 
-## Purpose
+Version: 2.0
 
-This document defines the engineering rules, architectural principles, and development standards for DevGrid.
+Status: ACTIVE
 
-The purpose of this document is to prevent architectural drift, scope creep, unnecessary rewrites, and inconsistent implementation decisions.
-
-This document applies to all future versions of DevGrid unless explicitly superseded.
+Repository Type: Master Repository
 
 ---
 
-# Project Philosophy
+# Purpose
 
-DevGrid is a browser-first automation tool.
+This repository contains the DevGrid product.
 
-The project should remain:
+The extension is the primary runtime environment of DevGrid.
 
-* Simple
-* Reliable
-* Maintainable
+All user-facing functionality belongs here.
+
+This document exists to:
+
+* Prevent architectural drift
+* Prevent backend creep
+* Maintain engineering quality
+* Preserve repository boundaries
+* Ensure long-term maintainability
+* Protect user trust
+
+Every contributor, AI agent, and maintainer must follow this document.
+
+---
+
+# Project Mission
+
+DevGrid automatically synchronizes LeetCode progress to GitHub while remaining:
+
 * Secure
-* Understandable
+* Transparent
+* Reliable
+* Easy to use
+* Easy to maintain
 
-Complexity must be justified.
+DevGrid is browser-first.
 
-Every new component introduces maintenance cost.
-
-Prefer the simplest solution that satisfies the requirements.
-
----
-
-# Current Architecture
-
-```text
-src/
-
-├── background/
-│   └── index.ts
-│
-├── content/
-│   ├── index.ts
-│   └── submission-detector.ts
-│
-├── domain/
-│   ├── github-config.ts
-│   └── submission.ts
-│
-├── popup/
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.ts
-│
-├── services/
-│   ├── github/
-│   ├── leetcode/
-│   ├── markdown/
-│   └── storage/
-│
-├── utils/
-│   └── file-naming.ts
-```
-
-Future additions should preserve this separation of concerns.
+The extension is the product.
 
 ---
 
-# Core Architectural Principles
+# Repository Ownership
 
-## Rule 1 - Preserve Service Boundaries
+This repository owns:
 
-Services must remain isolated.
+## User Experience
 
-Incorrect:
+* Popup UI
+* Settings UI
+* Authentication UI
+* Status UI
+* Error handling UI
 
-LeetCode Service → GitHub Service
+---
 
-Correct:
+## LeetCode Integration
 
-LeetCode Service
+* Page detection
+* Submission detection
+* Problem extraction
+* Submission extraction
+* GraphQL communication
+
+---
+
+## GitHub Synchronization
+
+* Repository communication
+* File creation
+* File updates
+* Commit creation
+* Sync orchestration
+
+---
+
+## Data Processing
+
+* Submission processing
+* Metadata processing
+* Statistics generation
+* Markdown generation
+
+---
+
+## Storage
+
+* User settings
+* Repository configuration
+* Session state
+* Cached metadata
+
+---
+
+## Authentication Client
+
+* Login initiation
+* Logout initiation
+* Session validation
+* Auth state management
+
+---
+
+# Repository Boundaries
+
+This repository DOES NOT own:
+
+* GitHub App secrets
+* OAuth credentials
+* Authentication infrastructure
+* Authorization callbacks
+* Secret management
+
+These belong exclusively to:
+
+devgrid-auth
+
+---
+
+# Multi Repository Architecture
+
+DevGrid consists of:
+
+Repository A
+
+devgrid-extension
+
+Public
+
+Master Repository
+
+---
+
+Repository B
+
+devgrid-auth
+
+Private
+
+Supporting Repository
+
+---
+
+Architecture decisions originate from:
+
+devgrid-extension
+
+The authentication repository follows these decisions.
+
+---
+
+# Architectural Principles
+
+## Principle 1 - Product Logic Stays In The Extension
+
+Business logic belongs inside this repository.
+
+Examples:
+
+* Submission workflows
+* Repository workflows
+* Statistics
+* Markdown generation
+* User workflows
+
+must remain here.
+
+Business logic must never migrate into devgrid-auth.
+
+---
+
+## Principle 2 - Direct GitHub Synchronization
+
+Synchronization must occur directly between:
+
+Extension
 ↓
-Domain Object
+GitHub
+
+Never:
+
+Extension
 ↓
-Sync Workflow
+Authentication Service
 ↓
-GitHub Service
+GitHub
 
-Services should communicate through domain models rather than direct coupling.
-
----
-
-## Rule 2 - GitHub API Isolation
-
-All GitHub API communication must remain inside:
-
-```text
-services/github
-```
-
-No direct GitHub API requests elsewhere in the application.
+The authentication service is not a synchronization proxy.
 
 ---
 
-## Rule 3 - LeetCode API Isolation
+## Principle 3 - Browser First
 
-All LeetCode GraphQL requests must remain inside:
+If functionality can safely execute inside the extension, it should remain inside the extension.
 
-```text
-services/leetcode
-```
-
-No GraphQL requests should be scattered across the codebase.
+Avoid unnecessary backend dependencies.
 
 ---
 
-## Rule 4 - Storage Isolation
+## Principle 4 - Least Privilege
 
-All Chrome storage operations must go through:
+Request only permissions that are required.
 
-```text
-services/storage
-```
+Avoid broad host permissions.
 
-Never access chrome.storage directly from UI, content scripts, or unrelated services.
+Avoid unnecessary Chrome permissions.
 
 ---
 
-## Rule 5 - Domain Models Are Contracts
+## Principle 5 - Security Before Features
 
-Domain models represent application contracts.
+Security improvements take priority over feature additions.
 
-Services should exchange typed domain objects.
-
-Avoid passing raw API responses throughout the application.
+Trust is a feature.
 
 ---
 
-# Authentication Principles
+## Principle 6 - Incremental Evolution
 
-## Rule 6 - Authentication Must Be Abstracted
+Prefer:
 
-Authentication implementation must not leak across the codebase.
+* Refactoring
+* Isolation
+* Hardening
 
-The application should not depend directly on:
+over rewrites.
 
-* PATs
-* Fine-Grained PATs
-* OAuth
-* GitHub Apps
+Working systems should evolve.
 
-Authentication should exist behind a dedicated abstraction boundary.
-
-Suggested future structure:
-
-```text
-services/
-
-├── auth/
-├── github/
-├── leetcode/
-├── markdown/
-└── storage/
-```
-
-Authentication changes should not require large-scale application rewrites.
+Not restart.
 
 ---
 
-## Rule 7 - Least Privilege First
+## Principle 7 - Documentation First
 
-When multiple solutions are viable:
-
-Choose the solution that requires:
-
-* Fewer permissions
-* Smaller attack surface
-* Lower maintenance burden
-
-Convenience alone is not sufficient justification for broader access.
-
----
-
-## Rule 8 - Research Before Security Decisions
-
-Authentication and security changes must follow:
+Major changes require:
 
 Research
 ↓
@@ -192,140 +248,227 @@ Decision
 ↓
 Implementation
 
-Never implement security changes based solely on assumptions.
+Implementation must not drive architecture.
 
 ---
 
-# Scope Management
+# Intended Architecture
 
-## Rule 9 - Scope Must Be Intentional
+src/
 
-Features should only be added when they provide clear value.
+├── background/
+├── content/
+├── domain/
+├── popup/
+│
+├── services/
+│   ├── auth/
+│   ├── github/
+│   ├── leetcode/
+│   ├── markdown/
+│   └── storage/
+│
+└── utils/
 
-Avoid adding functionality simply because it is technically possible.
-
-Every feature increases:
-
-* Maintenance cost
-* Testing burden
-* User complexity
-
----
-
-## Rule 10 - Avoid Premature Infrastructure
-
-Do not introduce:
-
-* Servers
-* Databases
-* Cloud services
-* Queues
-* Background infrastructure
-
-unless there is documented evidence that they are required.
-
-Infrastructure should solve a proven problem.
+No alternative structures should be introduced without architectural review.
 
 ---
 
-# Reliability Principles
+# Layer Responsibilities
 
-## Rule 11 - Preserve Existing User Data
+## background/
 
-Changes must not silently break:
+Responsibilities:
 
-* Existing repositories
-* Existing configurations
-* Existing sync history
+* Extension lifecycle
+* Workflow coordination
+* Event orchestration
+* Message routing
+* Sync coordination
+* Authentication coordination
 
-If migration is required:
+The background layer coordinates.
 
-* Document it
-* Test it
-* Provide rollback considerations
-
----
-
-## Rule 12 - Prefer Incremental Change
-
-Working systems should not be rewritten without strong justification.
-
-Prefer:
-
-* Refactoring
-* Isolation
-* Hardening
-
-over complete rewrites.
+It does not implement business logic.
 
 ---
 
-# Security Principles
+## content/
 
-## Rule 13 - Security Changes Require Documentation
+Responsibilities:
 
-Every significant security-related change must document:
+* DOM observation
+* Submission detection
+* LeetCode interaction
+* Data collection
 
-* Threat addressed
-* Risk level
-* Mitigation strategy
-* Tradeoffs
+Content scripts collect information.
 
-Undocumented security decisions are not acceptable.
+Content scripts do not:
 
----
-
-## Rule 14 - Trust Through Transparency
-
-Users should be able to understand:
-
-* What permissions DevGrid uses
-* Why those permissions are required
-* How credentials are stored
-* What access DevGrid has to their repositories
-
-User trust is a product feature.
+* Call GitHub APIs
+* Perform synchronization
+* Manage authentication
 
 ---
 
-# Documentation Requirements
+## domain/
 
-Major architectural or security work must be accompanied by documentation.
+Responsibilities:
+
+* Domain entities
+* Contracts
+* Shared types
+* Business models
 
 Examples:
 
-```text
-AUTH_ARCHITECTURE.md
+* Submission
+* GitHubConfig
+* AuthState
+* Repository
+* SyncResult
 
-SECURITY_REVIEW.md
+Services communicate through domain objects.
 
-THREAT_MODEL.md
-
-ONBOARDING_REVIEW.md
-
-ADR-001 Authentication Strategy
-
-ADR-002 Credential Storage Strategy
-
-ADR-003 Permission Model
-```
-
-Implementation should follow documented decisions.
+Not raw API responses.
 
 ---
 
-# Definition of Good Engineering
+## popup/
 
-Good engineering in DevGrid means:
+Responsibilities:
 
-* Simple solutions
-* Clear boundaries
-* Minimal permissions
-* Evidence-based decisions
-* Maintainable code
-* Reliable behavior
-* Transparent security practices
+* User interaction
+* Configuration
+* Status display
 
-The goal is not maximum features.
+No business logic.
 
-The goal is building a tool users can trust.
+UI calls services.
+
+Services perform work.
+
+---
+
+## services/auth/
+
+Responsibilities:
+
+* Authentication abstraction
+* Login workflows
+* Logout workflows
+* Session validation
+* Authentication state
+
+All authentication communication must pass through this service.
+
+No other service may directly call authentication endpoints.
+
+---
+
+## services/github/
+
+Responsibilities:
+
+* GitHub API communication
+* Repository operations
+* File management
+* Commit creation
+
+All GitHub communication belongs here.
+
+---
+
+## services/leetcode/
+
+Responsibilities:
+
+* LeetCode communication
+* GraphQL operations
+* Problem retrieval
+* Submission retrieval
+
+All LeetCode communication belongs here.
+
+---
+
+## services/markdown/
+
+Responsibilities:
+
+* README generation
+* Markdown formatting
+* Template processing
+
+---
+
+## services/storage/
+
+Responsibilities:
+
+* chrome.storage access
+* Persistence
+* Configuration storage
+* Session storage
+
+All storage access belongs here.
+
+---
+
+## utils/
+
+Pure utility functions only.
+
+Utilities must not:
+
+* Access APIs
+* Access storage
+* Implement workflows
+
+---
+
+# Communication Rules
+
+The extension communicates with:
+
+* GitHub APIs
+* LeetCode APIs
+* devgrid-auth APIs
+
+through defined interfaces.
+
+No hidden coupling.
+
+No direct repository dependency.
+
+No shared source code.
+
+---
+
+# Forbidden Changes
+
+Do not introduce:
+
+* Analytics systems
+* User tracking
+* Telemetry
+* Sync through backend
+* Business logic in UI
+* Business logic in content scripts
+* Hidden feature flags
+* Architecture bypasses
+
+---
+
+# Definition Of Success
+
+A successful DevGrid extension:
+
+* Detects submissions reliably
+* Synchronizes repositories reliably
+* Remains maintainable
+* Preserves user trust
+* Maintains least privilege
+* Keeps product logic inside the extension
+* Remains independent from authentication infrastructure
